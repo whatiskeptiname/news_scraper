@@ -15,9 +15,15 @@ def cleanhtml(raw_html):
 def count_article(search_title):
     # return the number of articles in the file
     if os.path.exists(f"{search_title}.json"):
-        with open(f"{search_title}.json", "r") as f:
+        with open(f"{search_title}.json", "r+") as f:
             data = json.load(f)
-            return len(data)
+            if (
+                data == None
+            ):  # if file contains no list, create one to prevent None error
+                print("some error occured")
+                data = []
+                json.dump(data, f)
+        return len(data)
     else:
         # create file if it doesnt exists and return the no. of articles as 0
         with open(f"{search_title}.json", "w+") as f:
@@ -26,14 +32,11 @@ def count_article(search_title):
 
 
 def load_article(search_title):
-    # loads the articles on the file based on search tile and article count
-
+    # loads the articles on the file based on search tile
     cleaned_articles = []  # list of articles
-    article_count = count_article(search_title)
-    page_no = article_count // 10 + 1
-    print(page_no)
-    print(article_count)
-    for page in range(  # starting from page_count (current page) next remaning pages
+    article_count = count_article(search_title) # gives the no. of articles in the json file
+    page_no = article_count // 10 + 1 # get the page on which the last fetch was done from
+    for page in range(  # starting from page_no (last fetched page) to next remaning pages
         page_no, 4
     ):  # each page contains 10 articles so taking 3 pages in loop for 30 articles
         url = (
@@ -46,39 +49,34 @@ def load_article(search_title):
         json_response = response.json()
         items = json_response["data"]["items"]
         i = 0  # index for item list count
-        for _ in items:
+        for _ in items: # loop over the articles
             content = items[i]["content"]
-            cleaned_article = cleanhtml(content)
-            cleaned_articles.append(cleaned_article)
+            cleaned_article = cleanhtml(content) # remove html tags
+            cleaned_articles.append(cleaned_article) # append individual articles in a list
             i = i + 1
-
     return cleaned_articles
 
 
 def append_article(search_title):
-    # append previously loaded articles with new articles
-    article_count = 0
+    # append previously loaded articles in the json file with new articles
     article_count = count_article(search_title)
-    page_count = article_count // 10 + 1
-
+    page_count = article_count // 10 # each page contaions 10 articles so integer division to get the lastly fetched page
     with open(f"{search_title}.json", "r+") as f:
         previous_articles = json.load(f, strict=False)
         previous_articles = previous_articles[
             0 : (page_count - 1) * 10
-        ]  # takes only articles from whole pages, ignores half loaded articles from a page
+        ]  # takes only articles from whole pages, ignores if the no. of articles loaded is less then total article in the page
         new_articles = load_article(search_title)
         if new_articles == None:
             print("some error occured")
             new_articles = []
-
-        previous_articles.extend(new_articles)
-
+        previous_articles.extend(new_articles) # append previously loaded articles with newly fetched articles
     with open(f"{search_title}.json", "w") as f:
-        # clear the file
+        # clear the file and dump total articles
         json.dump(previous_articles, f)
 
 
-search_title = "हाम्रो"
+search_title = "हाम्"
 append_article(search_title)
 
 print("---------completed----------")
