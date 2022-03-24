@@ -1,38 +1,40 @@
-import imp
 import requests
-from requests.exceptions import HTTPError
 import json
 import re
-
-# import os
-# from pathlib import Path
+import os
 
 
-def cleanhtml(raw_html):  # remove html tags from articles
+def cleanhtml(raw_html):
+    # remove html tags from articles
     raw_html = raw_html
     cleanr = re.compile("<.*?>")
     cleantext = re.sub(cleanr, "", raw_html)
     return cleantext
 
 
-search_title = "हाम्रो"  # title to search
-cleaned_articles = []  # list of articles
-previous_articles = []  # list of articles already downloaded
-page_count = 1
-try:
-    # existing_file = Path(f"{search_title}.json")
-    # existing_file.touch(exist_ok=True)
+def count_article(search_title):
+    # return the number of articles in the file
+    if os.path.exists(f"{search_title}.json"):
+        with open(f"{search_title}.json", "r") as f:
+            data = json.load(f)
+            return len(data)
+    else:
+        # create file if it doesnt exists and return the no. of articles as 0
+        with open(f"{search_title}.json", "w+") as f:
+            f.write("[]")
+            return 0
 
-    # with open(f"{search_title}.json", "r") as f:  # keeping search_title as file name
-    #     article_count = (
-    #         len(f.readlines()) - 2
-    #     )  # -2 because of the last brackets "[]" in the list
 
-    # page_count = (article_count // 10) + 1  # 10 articles per page
-    # if page_count < 1:
-    #     page_count = 1
+def load_article(search_title):
+    # loads the articles on the file based on search tile and article count
+
+    cleaned_articles = []  # list of articles
+    article_count = count_article(search_title)
+    page_no = article_count // 10 + 1
+    print(page_no)
+    print(article_count)
     for page in range(  # starting from page_count (current page) next remaning pages
-        1, 4
+        page_no, 4
     ):  # each page contains 10 articles so taking 3 pages in loop for 30 articles
         url = (
             "https://bg.annapurnapost.com/api/search?title="
@@ -44,26 +46,39 @@ try:
         json_response = response.json()
         items = json_response["data"]["items"]
         i = 0  # index for item list count
-        for item in items:
+        for _ in items:
             content = items[i]["content"]
             cleaned_article = cleanhtml(content)
             cleaned_articles.append(cleaned_article)
             i = i + 1
 
-    # with open(f"{search_title}.json", "w+") as f:  # keeping search_title as file name
-    #     if os.stat(f"{search_title}.json").st_size == 0:
-    #         json.dump(cleaned_articles, f)
-    #         print("new file -------------------")
-    #     previous_articles = json.loads(f.read())
-    #     final_articles = previous_articles + cleaned_articles
-    #     json.dump(cleaned_articles, f)
+    return cleaned_articles
 
-    with open(f"{search_title}.json", "w+") as f:  # keeping search_title as file name
-        json.dump(cleaned_articles, f)
 
-except HTTPError as http_err:
-    print(f"HTTP error occurred: {http_err}")
-except Exception as err:
-    print(f"Other error occurred: {err}")
+def append_article(search_title):
+    # append previously loaded articles with new articles
+    article_count = 0
+    article_count = count_article(search_title)
+    page_count = article_count // 10 + 1
 
-print("Completed!!!")
+    with open(f"{search_title}.json", "r+") as f:
+        previous_articles = json.load(f, strict=False)
+        previous_articles = previous_articles[
+            0 : (page_count - 1) * 10
+        ]  # takes only articles from whole pages, ignores half loaded articles from a page
+        new_articles = load_article(search_title)
+        if new_articles == None:
+            print("some error occured")
+            new_articles = []
+
+        previous_articles.extend(new_articles)
+
+    with open(f"{search_title}.json", "w") as f:
+        # clear the file
+        json.dump(previous_articles, f)
+
+
+search_title = "हाम्रो"
+append_article(search_title)
+
+print("---------completed----------")
