@@ -3,8 +3,9 @@ import requests
 from requests.exceptions import HTTPError
 import json
 import re
-import os
-from pathlib import Path
+
+# import os
+# from pathlib import Path
 
 
 def cleanhtml(raw_html):  # remove html tags from articles
