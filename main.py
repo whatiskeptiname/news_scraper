@@ -73,7 +73,7 @@ def append_article(search_title):
     with open(f"{search_title}.json", "r+") as f:
         previous_articles = json.load(f, strict=False)
         previous_articles = previous_articles[
-            0 : (page_count - 1) * 10
+            0 : (page_count) * 10
         ]  # takes only articles from whole pages, ignores if the no. of articles loaded is less then total article in the page
         new_articles = load_article(search_title)
         if new_articles == None:
