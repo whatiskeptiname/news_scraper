@@ -11,33 +11,10 @@ def cleanhtml(raw_html):
     return cleantext
 
 
-def last_fetched_page(search_title):
-    # return the last fetched page number
-    try:
-        with open(f"{search_title}.json", "r+") as _:  # check if file exists
-            with open("article_index.json", "r+") as f:
-                data = json.load(f)
-                return data[search_title]  # return the page number of last fetch
-    except FileNotFoundError:
-        # update page index of deleted file to 0
-        # add new search title with page index 0 to the index file if it doesnt exist
-        with open(f"{search_title}.json", "w") as f:
-            f.write("[]")
-        with open("article_index.json", "r+") as f:
-            data = json.load(f)
-            data.update({search_title: 0})
-        # clear the  file to dump
-        with open("article_index.json", "w") as f:
-            json.dump(data, f)
-            return 0
-    except KeyError:
-        with open("article_index.json", "r+") as f:
-            data = json.load(f)
-            data.update({search_title: 0})
-        # clear the  file to dump
-        with open("article_index.json", "w") as f:
-            json.dump(data, f)
-        return 0
+def delete_file_content(file_ptr):
+    # delete the content of the file
+    file_ptr.seek(0)
+    file_ptr.truncate()
 
 
 def add_page_index(search_title, page_no):
@@ -51,17 +28,14 @@ def add_page_index(search_title, page_no):
         json.dump(data, f)
 
 
-def load_article(search_title):
+def load_article(search_title, current_page):
     # loads the articles on the file based on search tile
     end_page_no = 4  # fetch articles till page (end_page_no -1)
     cleaned_articles = []  # list of articles
-    page_no = last_fetched_page(
-        search_title
-    )  # get the page on which the last fetch was done from
     for (
         page
     ) in range(  # starting from page_no (last fetched page) to next remaning pages
-        page_no + 1, end_page_no
+        current_page + 1, end_page_no
     ):  # each page contains 10 articles so taking 3 pages in loop for 30 articles
         url = (
             "https://bg.annapurnapost.com/api/search?title="
@@ -85,26 +59,46 @@ def load_article(search_title):
     return cleaned_articles
 
 
-def append_article(search_title):
-    # append previously loaded articles in the json file with new articles
-    page_count = last_fetched_page(
-        search_title
-    )  # each page contaions 10 articles so integer division to get the lastly fetched page
+search_title = "गुरु"
+
+if __name__ == "__main__":
+    try:
+        with open(f"{search_title}.json", "r+") as _:  # check if file exists
+            with open("article_index.json", "r+") as f:
+                data = json.load(f)
+                current_page = data[search_title]
+    except FileNotFoundError:
+        # update page index of deleted file to 0
+        # add new search title with page index 0 to the index file if it doesnt exist
+        with open(f"{search_title}.json", "w") as f:
+            f.write("[]")
+        with open("article_index.json", "r+") as f:
+            data = json.load(f)
+            data.update({search_title: 0})
+            # clear the  file to dump
+            delete_file_content(f)
+            json.dump(data, f)
+            current_page = data[search_title]
+    except KeyError:
+        with open("article_index.json", "r+") as f:
+            data = json.load(f)
+            data.update({search_title: 0})
+            # clear the  file to dump
+            delete_file_content(f)
+            json.dump(data, f)
+        current_page = data[search_title]
     with open(f"{search_title}.json", "r+") as f:
         previous_articles = json.load(f, strict=False)
-        new_articles = load_article(search_title)
+        new_articles = load_article(search_title, current_page)
         if new_articles == None:
             print("some error occured")
             new_articles = []
         previous_articles.extend(
             new_articles
         )  # append previously loaded articles with newly fetched articles
-    with open(f"{search_title}.json", "w") as f:
-        # clear the file and dump total articles
+        delete_file_content(f)
         json.dump(previous_articles, f)
+    print("\n--completed--")
 
 
-search_title = "हाम्रो"
-append_article(search_title)
-
-print("\n--completed--")
+# use finally for file exception handling
