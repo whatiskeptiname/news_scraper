@@ -26,7 +26,7 @@ def add_page_index(file_p, search_title: str, page_no: int) -> None:
     json.dump(data, file_p)
 
 
-def load_article(file_p, search_title: str, current_page: int):
+def load_article(file_p, search_title: str, current_page: int) -> list:
     """loads the articles on the file based on search tile"""
     end_page_no = 7  # fetch articles till page (end_page_no -1)
     cleaned_articles = []  # list of articles
