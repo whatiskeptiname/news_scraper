@@ -28,7 +28,7 @@ def add_page_index(file_p, search_title: str, page_no: int) -> None:
 
 def load_article(file_p, search_title: str, current_page: int):
     """loads the articles on the file based on search tile"""
-    end_page_no = 6  # fetch articles till page (end_page_no -1)
+    end_page_no = 7  # fetch articles till page (end_page_no -1)
     cleaned_articles = []  # list of articles
 
     for page in range(
