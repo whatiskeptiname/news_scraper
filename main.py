@@ -3,22 +3,22 @@ import json
 import re
 
 
-def cleanhtml(raw_html):
-    # remove html tags from articles
+def cleanhtml(raw_html: str) -> str:
+    """Remove html tags from articles"""
     raw_html = raw_html
     cleanr = re.compile("<.*?>")
     cleantext = re.sub(cleanr, "", raw_html)
     return cleantext
 
 
-def delete_file_content(file_ptr):
-    # delete the content of the file
+def delete_file_content(file_ptr) -> None:
+    """Delete all the content of file"""
     file_ptr.seek(0)
     file_ptr.truncate()
 
 
-def add_page_index(file_p, search_title, page_no):
-    # update the page index of the file to the last fetch page from the site
+def add_page_index(file_p, search_title: str, page_no: int) -> None:
+    """Update the page index of the file to the last fetch page from the site"""
     file_p.seek(0)
     data = json.load(file_p)
     data[search_title] = page_no
@@ -26,15 +26,14 @@ def add_page_index(file_p, search_title, page_no):
     json.dump(data, file_p)
 
 
-def load_article(file_p, search_title, current_page):
-    # loads the articles on the file based on search tile
+def load_article(file_p, search_title: str, current_page: int):
+    """loads the articles on the file based on search tile"""
     end_page_no = 6  # fetch articles till page (end_page_no -1)
     cleaned_articles = []  # list of articles
-    for (
-        page
-    ) in range(  # starting from page_no (last fetched page) to next remaning pages
+
+    for page in range(
         current_page + 1, end_page_no
-    ):  # each page contains 10 articles so taking 3 pages in loop for 30 articles
+    ):  # each page contains 10 articles in general condition
         url = (
             "https://bg.annapurnapost.com/api/search?title="
             + search_title
@@ -43,18 +42,21 @@ def load_article(file_p, search_title, current_page):
         )
         response = requests.get(url)
         json_response = response.json()
+
         try:
             items = json_response["data"]["items"]
             for i, _ in enumerate(items):  # loop over the articles
                 content = items[i]["content"]
-                cleaned_article = cleanhtml(content)  # remove html tags
+                cleaned_article = cleanhtml(content)
                 cleaned_articles.append(
                     cleaned_article
                 )  # append individual articles in a list
             add_page_index(file_p, search_title, page)  # update the page index
             print(f"Page {page} loaded")
+
         except KeyError:
             print("No more data availabel!!!")
+
     return cleaned_articles
 
 
