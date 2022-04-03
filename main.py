@@ -21,6 +21,6 @@ for page in range(
     response = requests.get(url)
     items = response.json()["data"]["items"]
     data["items"].extend(items)
+    data["page"] += 1  # update the page index
     with open(f"{search_title}.json", "w") as f:
         json.dump(data, f)
-    data["page"] += 1  # update the page index
